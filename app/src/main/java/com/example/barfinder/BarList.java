@@ -53,6 +53,7 @@ public class BarList extends AppCompatActivity {
                     bars.add(new ModelBar(address, latitude, longitude, name));
                 }
                 barListAdapter = new BarListAdapter(bars, BarList.this);
+                listOfBars.setAdapter(barListAdapter);
             }
 
             @Override
