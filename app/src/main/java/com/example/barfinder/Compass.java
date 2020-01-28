@@ -34,6 +34,5 @@ public class Compass extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
     }
 }
