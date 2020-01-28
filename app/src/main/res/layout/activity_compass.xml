@@ -21,4 +21,14 @@
         android:text="Settings"
         android:layout_alignParentRight="true">
     </Button>
+
+    <TextView
+        android:id="@+id/NameOfNearestBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NearestBar"
+        android:layout_centerHorizontal="true"
+        android:textColor="@color/black"
+        android:layout_marginTop="60dp">
+    </TextView>
 </RelativeLayout>
