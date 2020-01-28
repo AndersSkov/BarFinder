@@ -11,7 +11,7 @@
         android:theme="@style/AppTheme">
         <activity android:name=".Settings"></activity>
         <activity android:name=".BarList" />
-        <activity android:name=".Compas">
+        <activity android:name=".Compass">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Compass">
+
+    <Button
+        android:id="@+id/BarListButton"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:text="Bar List">
+    </Button>
+
+    <Button
+        android:id="@+id/SettingsButton"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:text="Settings"
+        android:layout_alignParentRight="true">
+    </Button>
+</RelativeLayout>
