@@ -29,6 +29,16 @@
         android:text="NearestBar"
         android:layout_centerHorizontal="true"
         android:textColor="@color/black"
-        android:layout_marginTop="60dp">
+        android:textSize="25dp"
+        android:layout_marginTop="100dp">
     </TextView>
+
+    <ImageView
+        android:id="@+id/arrow"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:src="@drawable/beer_arrow"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true">
+    </ImageView>
 </RelativeLayout>
