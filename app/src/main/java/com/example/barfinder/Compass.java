@@ -2,8 +2,12 @@ package com.example.barfinder;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -12,40 +16,69 @@ import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class Compass extends AppCompatActivity implements SensorEventListener, LocationListener {
+public class Compass extends AppCompatActivity implements SensorEventListener {
 
     Button settingsButton, barListButton;
-    SensorManager sensorManager;
     TextView nearestBar;
-
     ImageView arrow;
 
+    static Compass instance;
+
     HashMap<String, Double> distances = new HashMap<>();
-    private Location locationObj, destination;
+    Location myLocation, destination;
+    LocationRequest locationRequest;
+    FusedLocationProviderClient fusedLocationProviderClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compass);
+
+        Dexter.withActivity(this).withPermission(Manifest.permission.ACCESS_COARSE_LOCATION).withListener(new PermissionListener() {
+            @Override
+            public void onPermissionGranted(PermissionGrantedResponse response) {
+                updateLocation();
+            }
+
+            @Override
+            public void onPermissionDenied(PermissionDeniedResponse response) {
+                Toast.makeText(Compass.this, "You must accept", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+
+            }
+        }).check();
+
+        instance = this;
 
         nearestBar = findViewById(R.id.NameOfNearestBar);
         arrow = findViewById(R.id.arrow);
@@ -58,6 +91,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener, L
                 startActivity(intent);
             }
         });
+
         barListButton = findViewById(R.id.BarListButton);
         barListButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -66,12 +100,50 @@ public class Compass extends AppCompatActivity implements SensorEventListener, L
                 startActivity(intent);
             }
         });
+
         destination = new Location("destination");
-        locationObj = new Location("currentLocation");
-        locationObj.setLatitude(56.148932);
-        locationObj.setLongitude(10.168355);
+        myLocation = new Location("currentLocation");
+
 
         findNearestBar();
+    }
+
+    public void updateLocation() {
+        buildLocationRequest();
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, getPendingIntent());
+    }
+
+    public void updateMyLocation(Location value){
+        Compass.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                myLocation = value;
+                findNearestBar();
+            }
+        });
+    }
+
+    public PendingIntent getPendingIntent() {
+        Intent intent = new Intent(this, MyLocationService.class);
+        intent.setAction(MyLocationService.ACTION_PROCESS_UPDATE);
+        return PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    public void buildLocationRequest() {
+        locationRequest = new LocationRequest();
+        locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        locationRequest.setInterval(5000);
+        locationRequest.setFastestInterval(3000);
+        locationRequest.setSmallestDisplacement(10f);
+    }
+
+    public static Compass getInstance() {
+        return instance;
     }
 
     private void findNearestBar() {
@@ -107,10 +179,10 @@ public class Compass extends AppCompatActivity implements SensorEventListener, L
 
                 for(DataSnapshot d : dataSnapshot.getChildren()){
 
-                    double latDistance = Math.toRadians(d.child("Latitude").getValue(Double.class) - destination.getLatitude());
-                    double lonDistance = Math.toRadians(d.child("Longitude").getValue(Double.class) - destination.getLongitude());
+                    double latDistance = Math.toRadians(d.child("Latitude").getValue(Double.class) - myLocation.getLatitude());
+                    double lonDistance = Math.toRadians(d.child("Longitude").getValue(Double.class) - myLocation.getLongitude());
                     double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                            + Math.cos(Math.toRadians(destination.getLatitude())) * Math.cos(Math.toRadians(d.child("Latitude").getValue(Double.class)))
+                            + Math.cos(Math.toRadians(myLocation.getLatitude())) * Math.cos(Math.toRadians(d.child("Latitude").getValue(Double.class)))
                             * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
                     double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     double distance = R * c * 1000; // convert to meters
@@ -158,20 +230,20 @@ public class Compass extends AppCompatActivity implements SensorEventListener, L
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         // If we don't have a Location, we break out
-        if ( locationObj == null ) return;
+        if ( myLocation == null ) return;
 
         float azimuth = sensorEvent.values[0];
 
         GeomagneticField geoField = new GeomagneticField( Double
-                .valueOf( locationObj.getLatitude() ).floatValue(), Double
-                .valueOf( locationObj.getLongitude() ).floatValue(),
-                Double.valueOf( locationObj.getAltitude() ).floatValue(),
+                .valueOf( myLocation.getLatitude() ).floatValue(), Double
+                .valueOf( myLocation.getLongitude() ).floatValue(),
+                Double.valueOf( myLocation.getAltitude() ).floatValue(),
                 System.currentTimeMillis() );
 
         azimuth -= geoField.getDeclination(); // converts magnetic north into true north
 
         // Store the bearingTo in the bearTo variable
-        float bearTo = locationObj.bearingTo(destination);
+        float bearTo = myLocation.bearingTo(destination);
 
         // If the bearTo is smaller than 0, add 360 to get the rotation clockwise.
         if (bearTo < 0) {
@@ -191,30 +263,6 @@ public class Compass extends AppCompatActivity implements SensorEventListener, L
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
-    //LocationListener
-    @Override
-    public void onLocationChanged(Location location) {
-        if(location != null) {
-            locationObj = location;
-        }
-        findNearestBar();
-    }
-
-    @Override
-    public void onStatusChanged(String s, int i, Bundle bundle) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String s) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String s) {
 
     }
 }
