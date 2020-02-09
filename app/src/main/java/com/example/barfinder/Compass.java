@@ -16,6 +16,7 @@ import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -56,10 +57,14 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
 
+    SensorManager mSensorManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compass);
+
+
 
         Dexter.withActivity(this).withPermission(Manifest.permission.ACCESS_COARSE_LOCATION).withListener(new PermissionListener() {
             @Override
@@ -101,9 +106,12 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             }
         });
 
-        destination = new Location("destination");
-        myLocation = new Location("currentLocation");
-
+        destination = new Location("");
+        destination.setLatitude(56.148211);
+        destination.setLongitude(10.200571);
+        myLocation = new Location("");
+        myLocation.setLatitude(56.159167);
+        myLocation.setLongitude(10.206569);
 
         findNearestBar();
     }
@@ -258,7 +266,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             direction = direction + 360;
         }
 
-        rotateImageView( arrow, R.drawable.beer_arrow, direction );
+        rotateImageView( arrow, R.drawable.beer_arrow, direction);
     }
 
     @Override

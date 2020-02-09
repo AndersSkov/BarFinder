@@ -13,8 +13,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <receiver
-            android:name=".MyLocationService"
-            android:exported="false"></receiver>
+            android:name=".MyLocationService">
+        </receiver>
 
         <activity android:name=".Settings" />
         <activity android:name=".BarList" />
