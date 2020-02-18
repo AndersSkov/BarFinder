@@ -240,30 +240,13 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     }
 
     private void rotateImageView(ImageView imageView, int drawable, float rotate ) {
-
-        // Decode the drawable into a bitmap
-        Bitmap bitmapOrg = BitmapFactory.decodeResource( getResources(), drawable);
-
-        // Get the width/height of the drawable
-        DisplayMetrics dm = new DisplayMetrics(); getWindowManager().getDefaultDisplay().getMetrics(dm);
-        int width = bitmapOrg.getWidth(), height = bitmapOrg.getHeight();
-
-        // Initialize a new Matrix
         Matrix matrix = new Matrix();
+        float px = imageView.getX();
+        float py = imageView.getY();
+        imageView.setScaleType(ImageView.ScaleType.MATRIX);   //required
+        matrix.postRotate(rotate, px, py);
+        imageView.setImageMatrix(matrix);
 
-        // Decide on how much to rotate
-        rotate = rotate % 360;
-
-        // Actually rotate the image
-        matrix.postRotate( rotate, width, height );
-
-        // recreate the new Bitmap via a couple conditions
-        Bitmap rotatedBitmap = Bitmap.createBitmap( bitmapOrg, 0, 0, width, height, matrix, true );
-        //BitmapDrawable bmd = new BitmapDrawable( rotatedBitmap );
-
-        //imageView.setImageBitmap( rotatedBitmap );
-        imageView.setImageDrawable(new BitmapDrawable(getResources(), rotatedBitmap));
-        //imageView.setScaleType( ImageView.ScaleType.CENTER );
     }
 
     //SensorEventListener
