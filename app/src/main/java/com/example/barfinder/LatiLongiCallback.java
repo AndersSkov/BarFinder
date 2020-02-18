@@ -1,5 +1,7 @@
 package com.example.barfinder;
 
+import java.util.HashMap;
+
 public interface LatiLongiCallback {
-    void onCallback(double lati, double longi);
+    void onCallback(HashMap<String, Pair> values);
 }

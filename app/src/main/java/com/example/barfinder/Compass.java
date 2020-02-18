@@ -46,25 +46,31 @@ import java.util.Map;
 
 public class Compass extends AppCompatActivity implements SensorEventListener {
 
-    Button settingsButton, barListButton;
+    Button settingsButton, barListButton, rotateButton, showInMapsButton;
     TextView nearestBar;
     ImageView arrow;
 
     static Compass instance;
 
-    HashMap<String, Double> distances = new HashMap<>();
+    HashMap<String, Double> distancesHashMap = new HashMap<>();
+    HashMap<String, Pair> latiLongiHashMap = new HashMap<>();
     Location myLocation, destination;
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
 
     SensorManager mSensorManager;
+    Sensor mGyroscope, mAccSensor;
+
+    String nameOfClosestBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compass);
 
-
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         Dexter.withActivity(this).withPermission(Manifest.permission.ACCESS_COARSE_LOCATION).withListener(new PermissionListener() {
             @Override
@@ -103,6 +109,26 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             public void onClick(View view) {
                 Intent intent = new Intent(Compass.this, BarList.class);
                 startActivity(intent);
+            }
+        });
+
+        rotateButton = findViewById(R.id.rotateButton);
+        rotateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                rotateImageView(arrow, R.drawable.beer_arrow, 90);
+            }
+        });
+
+        showInMapsButton = findViewById(R.id.showInMapsButton);
+        showInMapsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try{
+
+                } catch (Exception e){
+
+                }
             }
         });
 
@@ -158,21 +184,26 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
         myDistance(new DistanceCallback() {
             @Override
             public void onCallback(HashMap<String, Double> values) {
-                String name = "Max";
+                nameOfClosestBar = "Max";
                 double distance = -1;
                 for (Map.Entry<String, Double> entry : values.entrySet()) {
                     if (distance == -1 || entry.getValue() < distance) {
                         distance = entry.getValue();
-                        name = entry.getKey();
+                        nameOfClosestBar = entry.getKey();
                     }
                 }
-                nearestBar.setText(name);
+                nearestBar.setText(nameOfClosestBar);
             }
         }, new LatiLongiCallback() {
             @Override
-            public void onCallback(double lati, double longi) {
-                destination.setLatitude(lati);
-                destination.setLongitude(longi);
+            public void onCallback(HashMap<String, Pair> values) {
+                for (Map.Entry<String, Pair> entry : values.entrySet()) {
+                    if(entry.getKey().equals(nameOfClosestBar)){
+                        destination.setLatitude((Double) entry.getValue().getLati());
+                        destination.setLongitude((Double) entry.getValue().getLongi());
+                    }
+                }
+
             }
         });
     }
@@ -182,7 +213,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
         mRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                distances.clear();
+                distancesHashMap.clear();
                 final int R = 6371; // Radius of the earth
 
                 for(DataSnapshot d : dataSnapshot.getChildren()){
@@ -196,10 +227,11 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
                     double distance = R * c * 1000; // convert to meters
                     distance = Math.pow(distance, 2);
 
-                    distances.put(d.child("Name").getValue(String.class), distance);
+                    distancesHashMap.put(d.child("Name").getValue(String.class), distance);
+                    latiLongiHashMap.put(d.child("Name").getValue(String.class), new Pair(d.child("Latitude").getValue(Double.class), d.child("Longitude").getValue(Double.class)));
                 }
-                distanceCallback.onCallback(distances);
-                latiLongiCallback.onCallback(56, 10);
+                distanceCallback.onCallback(distancesHashMap);
+                latiLongiCallback.onCallback(latiLongiHashMap);
             }
 
             @Override
@@ -231,7 +263,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
 
         //imageView.setImageBitmap( rotatedBitmap );
         imageView.setImageDrawable(new BitmapDrawable(getResources(), rotatedBitmap));
-        imageView.setScaleType( ImageView.ScaleType.CENTER );
+        //imageView.setScaleType( ImageView.ScaleType.CENTER );
     }
 
     //SensorEventListener
@@ -272,5 +304,17 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mSensorManager.unregisterListener(this, mAccSensor);
     }
 }

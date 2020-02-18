@@ -35,10 +35,27 @@
 
     <ImageView
         android:id="@+id/arrow"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
         android:src="@drawable/beer_arrow"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true">
     </ImageView>
+
+    <Button
+        android:id="@+id/rotateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="Rotate">
+    </Button>
+
+    <Button
+        android:id="@+id/showInMapsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show location in maps"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp" />
 </RelativeLayout>
