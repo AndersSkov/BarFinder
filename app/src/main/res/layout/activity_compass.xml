@@ -1,61 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     tools:context=".Compass">
 
     <Button
         android:id="@+id/BarListButton"
-        android:layout_width="100dp"
-        android:layout_height="50dp"
-        android:text="Bar List">
-    </Button>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/button_shape_small"
+        android:backgroundTint="@color/button_background"
+        android:drawableLeft="@drawable/bar_list_logo"
+        android:text="  Bar List"></Button>
 
     <Button
         android:id="@+id/SettingsButton"
-        android:layout_width="100dp"
-        android:layout_height="50dp"
-        android:text="Settings"
-        android:layout_alignParentRight="true">
-    </Button>
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:background="@drawable/button_shape_small"
+        android:backgroundTint="@color/button_background"
+        android:drawableRight="@drawable/settings_logo"
+        android:text="Settings  "></Button>
 
     <TextView
         android:id="@+id/NameOfNearestBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="NearestBar"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:text="NearestBar"
         android:textColor="@color/black"
-        android:textSize="25dp"
-        android:layout_marginTop="100dp">
-    </TextView>
+        android:textSize="25dp"></TextView>
 
     <ImageView
         android:id="@+id/arrow"
         android:layout_width="250dp"
         android:layout_height="250dp"
-        android:src="@drawable/beer_arrow"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true">
-    </ImageView>
+        android:layout_centerVertical="true"
+        android:src="@drawable/beer_arrow"></ImageView>
 
     <Button
         android:id="@+id/rotateButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:text="Rotate">
-    </Button>
+        android:text="Rotate"></Button>
 
     <Button
         android:id="@+id/showInMapsButton"
-        android:layout_width="wrap_content"
+        android:layout_width="250dp"
         android:layout_height="wrap_content"
-        android:text="Show location in maps"
-        android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="20dp" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/button_shape_large"
+        android:backgroundTint="@color/button_background"
+        android:drawableRight="@drawable/location_logo"
+        android:text="Show location in maps" />
 </RelativeLayout>

@@ -11,16 +11,18 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.graphics.drawable.BitmapDrawable;
 import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
+import android.os.Debug;
+import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -52,11 +54,12 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
 
     static Compass instance;
 
-    HashMap<String, Double> distancesHashMap = new HashMap<>();
+    HashMap<String, Pair2> distancesHashMap = new HashMap<String, Pair2>();
     HashMap<String, Pair> latiLongiHashMap = new HashMap<>();
     Location myLocation, destination;
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
+    String address;
 
     SensorManager mSensorManager;
     Sensor mGyroscope, mAccSensor;
@@ -100,6 +103,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             public void onClick(View view) {
                 Intent intent = new Intent(Compass.this, Settings.class);
                 startActivity(intent);
+                overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
             }
         });
 
@@ -109,6 +113,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             public void onClick(View view) {
                 Intent intent = new Intent(Compass.this, BarList.class);
                 startActivity(intent);
+                overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left);
             }
         });
 
@@ -116,7 +121,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
         rotateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                rotateImageView(arrow, R.drawable.beer_arrow, 90);
+                rotateImageView(arrow, R.drawable.beer_arrow, 196);
             }
         });
 
@@ -125,9 +130,15 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             @Override
             public void onClick(View view) {
                 try{
-
+                    if(!address.isEmpty()){
+                        address.replace(' ', '+');
+                        Uri gmmUri = Uri.parse("geo:0,0?q=" + address); Intent mapSearchIntent = new Intent(
+                                android.content.Intent.ACTION_VIEW, gmmUri);
+                        mapSearchIntent.setPackage("com.google.android.apps.maps"); startActivity(mapSearchIntent);
+                        startActivity(mapSearchIntent);
+                    }
                 } catch (Exception e){
-
+                    Toast.makeText(getApplicationContext(), "Couldn't locate the location", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -183,13 +194,14 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     private void findNearestBar() {
         myDistance(new DistanceCallback() {
             @Override
-            public void onCallback(HashMap<String, Double> values) {
+            public void onCallback(HashMap<String, Pair2> values) {
                 nameOfClosestBar = "Max";
                 double distance = -1;
-                for (Map.Entry<String, Double> entry : values.entrySet()) {
-                    if (distance == -1 || entry.getValue() < distance) {
-                        distance = entry.getValue();
+                for (Map.Entry<String, Pair2> entry : values.entrySet()) {
+                    if (distance == -1 || (double) entry.getValue().getDistance() < distance) {
+                        distance = (double) entry.getValue().getDistance();
                         nameOfClosestBar = entry.getKey();
+                        address = (String) entry.getValue().getAddress();
                     }
                 }
                 nearestBar.setText(nameOfClosestBar);
@@ -203,7 +215,6 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
                         destination.setLongitude((Double) entry.getValue().getLongi());
                     }
                 }
-
             }
         });
     }
@@ -227,7 +238,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
                     double distance = R * c * 1000; // convert to meters
                     distance = Math.pow(distance, 2);
 
-                    distancesHashMap.put(d.child("Name").getValue(String.class), distance);
+                    distancesHashMap.put(d.child("Name").getValue(String.class), new Pair2(distance, d.child("Address").getValue(String.class)));
                     latiLongiHashMap.put(d.child("Name").getValue(String.class), new Pair(d.child("Latitude").getValue(Double.class), d.child("Longitude").getValue(Double.class)));
                 }
                 distanceCallback.onCallback(distancesHashMap);
@@ -241,12 +252,11 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
 
     private void rotateImageView(ImageView imageView, int drawable, float rotate ) {
         Matrix matrix = new Matrix();
-        float px = imageView.getX();
-        float py = imageView.getY();
-        imageView.setScaleType(ImageView.ScaleType.MATRIX);   //required
-        matrix.postRotate(rotate, px, py);
-        imageView.setImageMatrix(matrix);
-
+        Bitmap source = BitmapFactory.decodeResource(this.getResources(), R.drawable.beer_arrow);
+        matrix.postRotate(rotate);
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(source, imageView.getWidth(), imageView.getHeight(), true);
+        Bitmap rotatedBitmap = Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.getWidth(), scaledBitmap.getHeight(), matrix, true);
+        imageView.setImageBitmap(rotatedBitmap);
     }
 
     //SensorEventListener
@@ -281,7 +291,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             direction = direction + 360;
         }
 
-        rotateImageView( arrow, R.drawable.beer_arrow, direction);
+        rotateImageView(arrow, R.drawable.beer_arrow, direction);
     }
 
     @Override
