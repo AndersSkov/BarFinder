@@ -9,9 +9,6 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -20,12 +17,8 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Debug;
-import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.animation.Animation;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.Button;
@@ -67,7 +60,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     String address;
 
     SensorManager mSensorManager;
-    Sensor mGyroscope, mAccSensor;
+    Sensor mOrientation;
 
     String nameOfClosestBar;
     Float prevRotate = 0.0f;
@@ -78,8 +71,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
         setContentView(R.layout.activity_compass);
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
 
         Dexter.withActivity(this).withPermission(Manifest.permission.ACCESS_COARSE_LOCATION).withListener(new PermissionListener() {
             @Override
@@ -266,19 +258,6 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
         prevRotate = rotate;
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 1){
-                boolean dontShowName = data.getExtras().getBoolean("showNameOfBar");
-                if(!dontShowName){
-                    nearestBar.setVisibility(View.VISIBLE);
-                } else{
-                    nearestBar.setVisibility(View.INVISIBLE);
-                }
-        }
-    }
-
     //SensorEventListener
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
@@ -294,7 +273,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
                 Double.valueOf( myLocation.getAltitude()).floatValue(),
                 System.currentTimeMillis() );
 
-        azimuth += geoField.getDeclination(); // converts magnetic north into true north
+        azimuth -= geoField.getDeclination(); // converts magnetic north into true north
 
         // Store the bearingTo in the bearTo variable
         float bearTo = myLocation.bearingTo(destination);
@@ -321,14 +300,27 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1){
+            boolean dontShowName = data.getExtras().getBoolean("showNameOfBar");
+            if(!dontShowName){
+                nearestBar.setVisibility(View.VISIBLE);
+            } else{
+                nearestBar.setVisibility(View.INVISIBLE);
+            }
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mOrientation, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mSensorManager.unregisterListener(this, mAccSensor);
+        mSensorManager.unregisterListener(this, mOrientation);
     }
 }

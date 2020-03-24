@@ -2,6 +2,7 @@ package com.example.barfinder;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -53,11 +54,11 @@ public class Settings extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent();
-        intent.putExtra("showNameOfBar", isShowNearestBarChecked);
-        setResult(RESULT_OK, intent);
         super.onBackPressed();
         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+        Intent intent = new Intent();
+        intent.putExtra("showNameOfBar", isShowNearestBarChecked);
+        setResult(Activity.RESULT_OK, intent);
     }
 
     @Override
@@ -75,6 +76,5 @@ public class Settings extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        showNearestBar.setChecked(isShowNearestBarChecked);
     }
 }
