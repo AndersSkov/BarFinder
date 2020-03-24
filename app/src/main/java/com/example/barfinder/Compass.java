@@ -1,6 +1,7 @@
 package com.example.barfinder;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -23,6 +24,10 @@ import android.os.Debug;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -65,6 +70,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     Sensor mGyroscope, mAccSensor;
 
     String nameOfClosestBar;
+    Float prevRotate = 0.0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,7 +109,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             public void onClick(View view) {
                 Intent intent = new Intent(Compass.this, Settings.class);
                 startActivity(intent);
-                overridePendingTransition(R.anim.right_to_left, R.anim.left_to_right);
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
             }
         });
 
@@ -113,7 +119,7 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
             public void onClick(View view) {
                 Intent intent = new Intent(Compass.this, BarList.class);
                 startActivity(intent);
-                overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left);
+                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
             }
         });
 
@@ -251,12 +257,26 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
     }
 
     private void rotateImageView(ImageView imageView, int drawable, float rotate ) {
-        Matrix matrix = new Matrix();
-        Bitmap source = BitmapFactory.decodeResource(this.getResources(), R.drawable.beer_arrow);
-        matrix.postRotate(rotate);
-        Bitmap scaledBitmap = Bitmap.createScaledBitmap(source, imageView.getWidth(), imageView.getHeight(), true);
-        Bitmap rotatedBitmap = Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.getWidth(), scaledBitmap.getHeight(), matrix, true);
-        imageView.setImageBitmap(rotatedBitmap);
+
+        RotateAnimation animation = new RotateAnimation(prevRotate, rotate, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        animation.setInterpolator(new LinearInterpolator());
+        animation.setDuration(300);
+        animation.setFillAfter(true);
+        imageView.setAnimation(animation);
+        prevRotate = rotate;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1){
+                boolean dontShowName = data.getExtras().getBoolean("showNameOfBar");
+                if(!dontShowName){
+                    nearestBar.setVisibility(View.VISIBLE);
+                } else{
+                    nearestBar.setVisibility(View.INVISIBLE);
+                }
+        }
     }
 
     //SensorEventListener
@@ -266,14 +286,15 @@ public class Compass extends AppCompatActivity implements SensorEventListener {
         if ( myLocation == null ) return;
 
         float azimuth = sensorEvent.values[0];
+        //azimuth = (float) Math.toDegrees(azimuth);
 
-        GeomagneticField geoField = new GeomagneticField( Double
-                .valueOf( myLocation.getLatitude() ).floatValue(), Double
-                .valueOf( myLocation.getLongitude() ).floatValue(),
-                Double.valueOf( myLocation.getAltitude() ).floatValue(),
+        GeomagneticField geoField = new GeomagneticField(
+                Double.valueOf( myLocation.getLatitude()).floatValue(),
+                Double.valueOf( myLocation.getLongitude()).floatValue(),
+                Double.valueOf( myLocation.getAltitude()).floatValue(),
                 System.currentTimeMillis() );
 
-        azimuth -= geoField.getDeclination(); // converts magnetic north into true north
+        azimuth += geoField.getDeclination(); // converts magnetic north into true north
 
         // Store the bearingTo in the bearTo variable
         float bearTo = myLocation.bearingTo(destination);
